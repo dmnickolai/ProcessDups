@@ -34,7 +34,9 @@ public class DupDbHelper {
     static final String dbUser ="dennis";
     static final String dbPassword = "55555";
     
+    // Class Variables
     Connection dbConn = null;
+    ResultSet dbRows = null;
      
     String baseTableName = "testBase";
     String dupsTableName = baseTableName + "Dups";
