@@ -103,6 +103,10 @@ public class DupDbHelper {
         return rowCount;
     }
     
+    int dbUpdate () {
+        throw new Exception ("not implemented");
+    }
+    
     Connection getDbConnection() {
        //if connection exists, return it
        if (dbConn != null) return dbConn;
