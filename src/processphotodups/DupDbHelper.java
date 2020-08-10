@@ -7,11 +7,15 @@
  */
 package processphotodups;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +24,7 @@ import java.util.logging.Logger;
  * @author Dennis Nickolai
  */
 
-public class DupDbHelper {
+class DupDbHelper {
     
     //  Constants necessary to open DB Connection
     static final String dbDriver = "com.mysql.cj.jdbc.Driver";
@@ -29,77 +33,48 @@ public class DupDbHelper {
     static final String dbUser ="dennis";
     static final String dbPassword = "55555";
     
-    // Class Variables
-    Connection dbConn = null;
-    ResultSet dbRows = null;
-     
+    // table names
     String baseTableName = "testBase";
     String dupsTableName = baseTableName + "Dups";
     
+    // Constants for SQL commands
     String selectBaseSQL = "SELECT * FROM " + baseTableName + " WHERE timestamp = ?;";
-    PreparedStatement selectBase = null;
-    
     String selectDupSQL = "SELECT * FROM " + dupsTableName + 
             " WHERE skipped = 0 AND markedfordelete = 0 " +
             " LIMIT ?;";
+    
+    // Prepared statement objects
+    PreparedStatement selectBase = null;
     PreparedStatement selectDups = null;
+    // Class Variables
     
-    ResultSet allDups = null;
-    
-    //ResultSet dupsTable = null;
-    
+    Connection dbConn = null;
+    ResultSet resultSet = null;
+     
+   // Constructor
     DupDbHelper() {
         dbConn = getDbConnection();
-        try {        
-            selectBase = dbConn.prepareStatement(selectBaseSQL);  
-            System.out.println(selectBase);
-            System.out.println(selectDupSQL);
-            selectDups = dbConn.prepareCall(selectDupSQL, ResultSet.TYPE_SCROLL_SENSITIVE, 
-                        ResultSet.CONCUR_UPDATABLE);
-            System.out.println(selectDups);
-        }
-        catch (Exception ex) {
-            System.out.println("Error in Initialize:" + ex.getMessage());
-            System.exit(2);
-        }  
-    }
-    
-    ResultSet getDupDbEntries (int limit){
-        allDups = null;
-        int rowCount = 0;
+        prepareSQLStatements();
         
-        try {
-            selectDups.setInt(1, limit);
-            allDups = selectDups.executeQuery();
-            if (allDups.last()) {//make cursor to point to the last row in the ResultSet object
-                 rowCount = allDups.getRow();
-                 allDups.beforeFirst(); //make cursor to point to the front of the ResultSet object, just before the first row.
-               }
-            System.out.println("Total number of rows in ResultSet object = "+rowCount);
-        } catch (SQLException ex) {
-             Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println("Exception in Dups:" + ex.getMessage());
-            System.exit(7);
-        }
-        return allDups;
     }
     
-    int getResultSetSize (ResultSet rs) {
-        int rowCount = 0;
-        try {
-            if (rs.last()) {//make cursor to point to the last row in the ResultSet object
-                rowCount = allDups.getRow();
-                allDups.beforeFirst(); //make cursor to point to the front of the ResultSet object, just before the first row.
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
-            System.exit(12);
-        }
-        return rowCount;
+    
+   
+
+    int dbSelect(String[] columns) {
+        throw new UnsupportedOperationException("db Select Not supported yet."); 
     }
     
-    int dbUpdate () {
-        throw new Exception ("not implemented");
+    int dbSelect(String[] columns, String where) {
+        throw new UnsupportedOperationException("dbSelect with where not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    int dbSelect(String[] columns, int limit) {
+        throw new UnsupportedOperationException("dbSelect with limit not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    int dbSelect(String[] columns, String where, int limit) {
+        throw new UnsupportedOperationException("dbSelect with limit/where not supported yet."); 
     }
     
     Connection getDbConnection() {
@@ -126,7 +101,7 @@ public class DupDbHelper {
        return null;
     }
 
-    public void closeDbConnection(){
+    void closeDbConnection(){
         try{
             if (dbConn!= null)
                 dbConn.close();
@@ -140,29 +115,29 @@ public class DupDbHelper {
         }
     }
     
-    public void markDupSkipped() {
-        try {
-            int id = allDups.getInt("id");
-            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName + 
-                    " SET skipped = 1 WHERE id = ?");
-            update.setInt(1, id);
-            int j = update.getUpdateCount();
-            int count = update.executeUpdate();
-        } catch (SQLException ex) {
-            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    boolean next() {
+        throw new UnsupportedOperationException("dbSelect with limit not supported yet.");
+    }
+    
+    int getRow() {
+        return resultSet.getRow();
     }
 
-    public void markToDelete() {
-        try {
-            int id = allDups.getInt("id");
-            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName + 
-                    " SET markedfordelete = 1 WHERE id = ?");
-            update.setInt(1, id);
-            int j = update.getUpdateCount();
-            int count = update.executeUpdate();
-        } catch (SQLException ex) {
-            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+    private void prepareSQLStatements() {
+        try {        
+            selectBase = dbConn.prepareStatement(selectBaseSQL);  
+            System.out.println(selectBase);
+            System.out.println(selectDupSQL);
+            selectDups = dbConn.prepareCall(selectDupSQL, ResultSet.TYPE_SCROLL_SENSITIVE, 
+                        ResultSet.CONCUR_UPDATABLE);
+            System.out.println(selectDups);
         }
+        catch (Exception ex) {
+            System.out.println("Error in Initialize:" + ex.getMessage());
+            System.exit(2);
+        }  
+        
     }
+
+
 }
