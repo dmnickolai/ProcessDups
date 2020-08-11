@@ -7,15 +7,11 @@
  */
 package processphotodups;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,6 +21,9 @@ import java.util.logging.Logger;
  */
 
 class DupDbHelper {
+    
+    private static final Logger LOGGER = 
+            Logger.getLogger(DupDbHelper.class.getName());
     
     //  Constants necessary to open DB Connection
     static final String dbDriver = "com.mysql.cj.jdbc.Driver";
@@ -58,9 +57,7 @@ class DupDbHelper {
         
     }
     
-    
-   
-
+    // the following methods perform viarions of SELECT statements
     int dbSelect(String[] columns) {
         throw new UnsupportedOperationException("db Select Not supported yet."); 
     }
@@ -89,8 +86,8 @@ class DupDbHelper {
            return conn;          
        }
        catch (SQLException ex){
-           System.out.println("SQL Exception:" + ex.getMessage());
-           System.out.println("Aborting app.....");
+           Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+           LOGGER.severe("Aborting app.....");
            System.exit(1);
        }
        catch (Exception ex){
@@ -108,7 +105,7 @@ class DupDbHelper {
         }
         catch(SQLException ex) {
             // report error then ignore
-            System.out.println("Exception in closs db connection, " + ex.getMessage());
+            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally {
             dbConn = null;
@@ -120,7 +117,12 @@ class DupDbHelper {
     }
     
     int getRow() {
-        return resultSet.getRow();
+        try {
+            return resultSet.getRow();
+        } catch (SQLException ex) {
+            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return -1;
     }
 
     private void prepareSQLStatements() {
@@ -133,11 +135,12 @@ class DupDbHelper {
             System.out.println(selectDups);
         }
         catch (Exception ex) {
-            System.out.println("Error in Initialize:" + ex.getMessage());
+            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.severe("Aborting app.....");
             System.exit(2);
         }  
-        
+         
     }
-
-
+    
+   
 }
