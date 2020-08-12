@@ -26,32 +26,37 @@ class DupDbHelper {
             Logger.getLogger(DupDbHelper.class.getName());
     
     //  Constants necessary to open DB Connection
-    static final String dbDriver = "com.mysql.cj.jdbc.Driver";
-    static final String dbName = "photos_catalog";
-    static final String dbUrl = "jdbc:mysql://localhost:3306/" + dbName;
-    static final String dbUser ="dennis";
+    private static final String dbDriver = "com.mysql.cj.jdbc.Driver";
+    private static final String dbName = "photos_catalog";
+    private static final String dbUrl = "jdbc:mysql://localhost:3306/" + dbName;
+    private static final String dbUser ="dennis";
     static final String dbPassword = "55555";
     
     // table names
-    String baseTableName = "testBase";
-    String dupsTableName = baseTableName + "Dups";
+    private String baseTableName = "testBase";
+    private String dupsTableName = baseTableName + "Dups";
     
     // Constants for SQL commands
-    String selectBaseSQL = "SELECT * FROM " + baseTableName + " WHERE timestamp = ?;";
-    String selectDupSQL = "SELECT * FROM " + dupsTableName + 
+    private String selectAllDupSQL = "SELECT * FROM " + dupsTableName +" LIMIT ?;";
+  
+    private String selectBaseSQL = "SELECT * FROM " + baseTableName + " WHERE timestamp = ?;";
+    private String selectDupSQL = "SELECT * FROM " + dupsTableName + 
             " WHERE skipped = 0 AND markedfordelete = 0 " +
             " LIMIT ?;";
     
     // Prepared statement objects
-    PreparedStatement selectBase = null;
-    PreparedStatement selectDups = null;
+    private PreparedStatement selectBase = null;
+    private PreparedStatement selectDups = null;
+    private PreparedStatement selectAllDups = null;
     // Class Variables
     
-    Connection dbConn = null;
-    ResultSet resultSet = null;
+    private Connection dbConn = null;
+    private ResultSet resultSet = null;
      
    // Constructor
     DupDbHelper() {
+        LOGGER.setLevel(Level.FINE);
+        LOGGER.log(Level.FINE,"In DbHelper Constuctor");
         dbConn = getDbConnection();
         prepareSQLStatements();
         
@@ -62,27 +67,41 @@ class DupDbHelper {
         throw new UnsupportedOperationException("db Select Not supported yet."); 
     }
     
-    int dbSelect(String[] columns, String where) {
+    ResultSet dbSelectAll(int limit){
+        try {
+            selectAllDups.setInt(1, limit);
+            resultSet = selectAllDups.executeQuery();
+            return resultSet  ;
+        } catch (SQLException ex) {
+            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        throw new UnsupportedOperationException("dbSelect returned SQL Exception.");
+    }
+    
+    ResultSet dbSelect(String[] columns, String where) {
         throw new UnsupportedOperationException("dbSelect with where not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    int dbSelect(String[] columns, int limit) {
+    ResultSet dbSelect(String[] columns, int limit) {
         throw new UnsupportedOperationException("dbSelect with limit not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    int dbSelect(String[] columns, String where, int limit) {
+    ResultSet dbSelect(String[] columns, String where, int limit) {
         throw new UnsupportedOperationException("dbSelect with limit/where not supported yet."); 
     }
     
     Connection getDbConnection() {
+        LOGGER.log(Level.FINE,"in getDbConnection");
        //if connection exists, return it
        if (dbConn != null) return dbConn;
+       LOGGER.log(Level.FINE,"need to make DB Conn");
        // open database connection
        try { 
            Class.forName(dbDriver);
            Connection conn = DriverManager.getConnection(dbUrl, dbUser,dbPassword);
            System.out.println("Connection OK");
            dbConn = conn;
+           LOGGER.log(Level.FINE,"DB Conn OK");
            return conn;          
        }
        catch (SQLException ex){
@@ -133,6 +152,9 @@ class DupDbHelper {
             selectDups = dbConn.prepareCall(selectDupSQL, ResultSet.TYPE_SCROLL_SENSITIVE, 
                         ResultSet.CONCUR_UPDATABLE);
             System.out.println(selectDups);
+            selectAllDups = dbConn.prepareStatement(selectAllDupSQL, ResultSet.TYPE_SCROLL_SENSITIVE, 
+                        ResultSet.CONCUR_UPDATABLE);
+            
         }
         catch (Exception ex) {
             Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);

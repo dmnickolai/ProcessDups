@@ -54,7 +54,7 @@ public class PhotoPanel extends JPanel{
         setBackground(Color.PINK);
         //setLayout (new BoxLayout(me , BoxLayout.Y_AXIS));
         setLayout(new BorderLayout(5,5));
-        JLabel titleLabel = new JLabel ("Base Photo");
+        JLabel titleLabel = new JLabel (title);
         // set font
         Font font = new Font("Courier", Font.BOLD,14);
         titleLabel.setFont(font);

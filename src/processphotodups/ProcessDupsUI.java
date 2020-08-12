@@ -55,13 +55,21 @@ public class ProcessDupsUI extends JFrame{
    PhotoPanel dupPhotoPanel = null;
    
    ActionButton[] baseButtons =  {ActionButton.REPLACE, ActionButton.RENAME, ActionButton.MOVE};
-   ActionButton[] dupButtons =  {ActionButton.DELETE, ActionButton.RENAME, ActionButton.MOVE};
+   ActionButton[] dupButtons =  {ActionButton.SKIP, ActionButton.DELETE, ActionButton.RENAME, ActionButton.MOVE};
    
    public ProcessDupsUI( ActionListener baseListener, ActionListener dupListener) {
         super("Process Photos with Same Timestamp");
         initClass();        
         buildUI(baseListener, dupListener);   
     }
+   
+   void showBasePhoto(String filePath) {
+       basePhotoPanel.showPhoto(filePath);
+   }
+   
+   void showDupPhoto(String filePath) {
+       dupPhotoPanel.showPhoto(filePath);
+   }
    
    private void buildUI(ActionListener baseListener, ActionListener dupListener) {
         // Setup full window
@@ -87,7 +95,7 @@ public class ProcessDupsUI extends JFrame{
         
           
         add(basePhotoPanel,BorderLayout.CENTER);
-          middlePanel.add(basePhotoPanel);
+        middlePanel.add(basePhotoPanel);
        
         dupPhotoPanel = new PhotoPanel("Possible Duplicate", dupButtons, dupListener);
         middlePanel.add(dupPhotoPanel);

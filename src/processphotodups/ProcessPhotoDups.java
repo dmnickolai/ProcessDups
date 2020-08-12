@@ -7,7 +7,8 @@ package processphotodups;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
@@ -17,52 +18,114 @@ import javax.swing.JOptionPane;
  */
 public class ProcessPhotoDups {
     
-    static void baseButtonClicked(ActionEvent e) {
-         JButton whichBtn = (JButton)e.getSource();
-        if (!(whichBtn instanceof JButton )) {
-            System.out.println("Event not triggered by Button");
-            System.exit(10);
-        }
+    ProcessDupsUI ui = null;
+    
+    ActionListener baseListener = null;
+    ActionListener dupListener = null;
+    DupPhotoRecordMgr dpm;
+    ProcessPhotoDups () {
+       Logger.getLogger(DupDbHelper.class.getName()).log(Level.FINE,
+                        null, "Consturctor");
+        baseListener = new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+            baseButtonClicked(evt);
+            };
+        };
+        dupListener = new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+            dupButtonClicked(evt);
+            };
+        };
         
-        String buttonName = whichBtn.getText();
-        String message="";
-        switch (buttonName){
-            case "Skip": {
-                message = "Skippping  base photo";
-                break;
-            }
-            case "Move": {
-                message = "Moving photo";
-                break;
-            }
-            case "Rename": {
-                message = "Renameing Photo";
-                break;
-            }
-            case "Delete": {
-                message = "Bye bye to photo";
-                break;
-            }
-        }    
-        JOptionPane.showMessageDialog(
-                     null, message, "Title", 
+        ui = new ProcessDupsUI(baseListener, dupListener);
+        ui.setVisible(true);
+        // instantiate Dup Photo Record Manager
+        dpm = new DupPhotoRecordMgr();
+        if (!dpm.next()) {
+            JOptionPane.showMessageDialog(
+                     null, "Duplicate Table Empty", "No Duplicates", 
                      JOptionPane.INFORMATION_MESSAGE);
-        
+            System.exit(0);
+        }
+        processDupEntry();
     }
     
-    static void dupButtonClicked(ActionEvent e) {
+    private void processDupEntry() {
+       
+            //int currNum = dpm .getRow();
+            long id = dpm.getId();
+        System.out.println("Id for first dup record: " + id);
+            String dupFilePath = dpm.getDupFilePath();
+            String baseFilePath = dpm.getBaseFilePath();
+            
+            ui.showDupPhoto(dupFilePath);
+            ui.showBasePhoto(baseFilePath);              
+    }
+      
+    void baseButtonClicked(ActionEvent e) {
         JButton whichBtn = (JButton)e.getSource();
         if (!(whichBtn instanceof JButton )) {
             System.out.println("Event not triggered by Button");
             System.exit(10);
         }
-        
         String buttonName = whichBtn.getText();
+        ActionButton ab = ActionButton.fromString(buttonName);
         String message="";
+        switch (ab) {
+            case REPLACE: {
+                message = "Replacing";
+                break;
+            }
+            case DELETE: {
+                message = "Deleting";
+                break;
+            }
+            case MOVE: {
+                message = "Moving";
+                break;
+            }
+            case RENAME: {
+                message = "Renaming";
+                break;
+            }
+        }
+        JOptionPane.showMessageDialog(
+                     null, "BASE:" + message, "Title", 
+                     JOptionPane.INFORMATION_MESSAGE);
+    } 
+    
+    void dupButtonClicked(ActionEvent e) {
+        JButton whichBtn = (JButton)e.getSource();
+        if (!(whichBtn instanceof JButton )) {
+            System.out.println("Event not triggered by Button");
+            System.exit(10);
+        }
+        String buttonName = whichBtn.getText();
+        ActionButton ab = ActionButton.fromString(buttonName);
+        String message="";
+        switch (ab) {
+            case SKIP: {
+                message = "Skipping";
+                break;
+            }
+            case DELETE: {
+                message = "Deleting";
+                break;
+            }
+            case MOVE: {
+                message = "Moving";
+                break;
+            }
+            case RENAME: {
+                message = "Renaming";
+                break;
+            }
+        }
+        /*
         switch (buttonName){
             case "Skip": {
                 
-            /*
+            
                 try { 
                     dbHelper.markDupSkipped();
                     if (dupsTable.next())
@@ -77,7 +140,7 @@ public class ProcessPhotoDups {
                 }
                 message = "Skippping dup photo";
                 break;
-            */
+           
             }
             case "Move": {
                 message = "Moving photo";
@@ -88,7 +151,7 @@ public class ProcessPhotoDups {
                 break;
             }
             case "Delete": {
-                /*
+                
                 int a=JOptionPane.showConfirmDialog(this,"You are about to delete file\n" +  
                         dupPhotoPanel.displayedPhotoPath.getText() + "\nAre you sure?");  
                 if(a==JOptionPane.YES_OPTION) {
@@ -106,13 +169,14 @@ public class ProcessPhotoDups {
                 processDup(dupsTable); 
                 break;
             }
-        }    
-        //JOptionPane.showMessageDialog(
-        //             null, message, "Title", 
-        //             JOptionPane.INFORMATION_MESSAGE);
+        } 
         */
-    }
-        }}
+        JOptionPane.showMessageDialog(
+                     null, "DUP: " + message, "Title", 
+                     JOptionPane.INFORMATION_MESSAGE);
+    } 
+        
+       
 
     /*
         dupsTable =dbHelper.getDupDbEntries(10);
@@ -134,25 +198,12 @@ public class ProcessPhotoDups {
      */
     public static void main(String[] args) {
         
-        
-        ActionListener baseEventHandler = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                baseButtonClicked(e);
-            }
-        };
-        // Event handler for Dup Panel buttons
-        ActionListener dupEventHandler = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dupButtonClicked(e);
-            }
-        };
-       
-         
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new ProcessDupsUI(baseEventHandler, dupEventHandler).setVisible(true);
+                Logger.getLogger(DupDbHelper.class.getName()).log(Level.FINE,
+                        null, "Main");
+                new ProcessPhotoDups();
+               
             }
         });
     }
