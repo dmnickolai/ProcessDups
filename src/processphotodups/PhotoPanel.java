@@ -32,18 +32,14 @@ import javax.swing.border.LineBorder;
  * @author Dennis
  */
 public class PhotoPanel extends JPanel{
-    final JButton btnSkip = new JButton("Skip");
-    final JButton btnRename = new JButton("Rename");
-    final JButton btnMove = new JButton("Move");
-    final JButton btnDelete = new JButton("Delete");
-    
+       
     JLabel displayedPhotoPath;
     JPanel me = null;
     Dimension dim = new Dimension(300,300);
     JLabel photoHolder;
     String panelTitle;
     ImageIcon noPhoto = null;
-    public PhotoPanel() {
+    public PhotoPanel(String title, ActionButton[] buttons, ActionListener eventHandler) {
         super();
         me = this;
         
@@ -64,9 +60,7 @@ public class PhotoPanel extends JPanel{
         titleLabel.setFont(font);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(titleLabel, BorderLayout.NORTH);
-        
-        
-        
+ 
         //
         JPanel innerPanel = new JPanel();
         innerPanel.setLayout(new BorderLayout());
@@ -82,14 +76,16 @@ public class PhotoPanel extends JPanel{
         JPanel gridPanel = new JPanel();
         gridPanel.setBorder(new LineBorder(Color.BLACK,3));
         gridPanel.setBackground(Color.ORANGE);
-        gridPanel.setLayout(new GridLayout(5, 1, 5, 5));
+        int k = buttons.length;
+        gridPanel.setLayout(new GridLayout(k, 1, 5, 5));
         gridPanel.setBorder(new LineBorder(Color.BLACK,3));
         gridPanel.setBackground(Color.RED);
-  
-        gridPanel.add(btnSkip);
-        gridPanel.add(btnRename);
-        gridPanel.add(btnMove);
-        gridPanel.add(btnDelete);
+        //  Populate grid with buttons
+        for( ActionButton thisButton: buttons) {
+            JButton b = new JButton(thisButton.getText());
+            gridPanel.add(b);
+        }
+        
         leftPanel.add (gridPanel);
         innerPanel.add(leftPanel, BorderLayout.WEST);
         //  Build Photo holder
@@ -105,23 +101,7 @@ public class PhotoPanel extends JPanel{
         
     }
     
-    public PhotoPanel(String title, String photoPath, ActionListener eventHandler) {
-        this();
-        //URL temp =getClass().getResource("/images/notfound.png");
-        //String temp2 = temp.toString();
-        //if (!photoPath.isEmpty()) showPhoto(photoPath);
-        showPhoto("xxx");
-        btnSkip.addActionListener(eventHandler);
-        btnMove.addActionListener(eventHandler);
-        btnRename.addActionListener(eventHandler);
-        btnDelete.addActionListener(eventHandler);
-    }
     
-    public JButton getSkipButton() {
-        return btnSkip;
-    }
-    
-      
      public void showPhoto(String filePath)  {
         //int ok = MediaTracker.COMPLETE;
         //int err = MediaTracker.ERRORED;

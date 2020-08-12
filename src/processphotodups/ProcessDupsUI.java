@@ -42,18 +42,23 @@ import javax.swing.border.LineBorder;
  */
 public class ProcessDupsUI extends JFrame{
     
+   
+    
    Container mainContainer = null;
    private ProcessDupsUI me = null; 
    ResultSet dupsTable = null;
    Icon noPhoto = null;
+   JLabel lblStatus=null;
    
    //DupDbHelper dbHelper = new DupDbHelper();
    PhotoPanel basePhotoPanel = null;
    PhotoPanel dupPhotoPanel = null;
    
+   ActionButton[] baseButtons =  {ActionButton.REPLACE, ActionButton.RENAME, ActionButton.MOVE};
+   ActionButton[] dupButtons =  {ActionButton.DELETE, ActionButton.RENAME, ActionButton.MOVE};
+   
    public ProcessDupsUI( ActionListener baseListener, ActionListener dupListener) {
         super("Process Photos with Same Timestamp");
-        
         initClass();        
         buildUI(baseListener, dupListener);   
     }
@@ -78,22 +83,27 @@ public class ProcessDupsUI extends JFrame{
         middlePanel.setLayout(new BoxLayout(middlePanel, BoxLayout.Y_AXIS));
         
         // Event handler for Base Panel buttons
-        basePhotoPanel = new PhotoPanel("Base Photo","", baseListener);
-        basePhotoPanel.btnSkip.setVisible(false);
+        basePhotoPanel = new PhotoPanel("Base Photo", baseButtons, baseListener);
+        
           
         add(basePhotoPanel,BorderLayout.CENTER);
           middlePanel.add(basePhotoPanel);
        
-        dupPhotoPanel = new PhotoPanel("Possible Duplicate","", dupListener);
+        dupPhotoPanel = new PhotoPanel("Possible Duplicate", dupButtons, dupListener);
         middlePanel.add(dupPhotoPanel);
         add(middlePanel,BorderLayout.CENTER);
 
         JPanel p = new JPanel();
         p.setBorder(new LineBorder(Color.BLACK,3));
         p.setBackground(Color.WHITE);
-        p.add(new JLabel("South"));
+        lblStatus = new JLabel("Status");
+        p.add(lblStatus);
         add(p,BorderLayout.SOUTH);
         
+   }
+   
+   void setStatus(String stat){
+       lblStatus.setText(stat);
    }
    
     private void initClass() {
