@@ -83,6 +83,7 @@ public class PhotoPanel extends JPanel{
         //  Populate grid with buttons
         for( ActionButton thisButton: buttons) {
             JButton b = new JButton(thisButton.getText());
+            b.addActionListener(eventHandler);
             gridPanel.add(b);
         }
         
