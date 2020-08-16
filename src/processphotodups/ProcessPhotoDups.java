@@ -7,6 +7,11 @@ package processphotodups;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
@@ -17,60 +22,66 @@ import javax.swing.JOptionPane;
  * @author Dennis
  */
 public class ProcessPhotoDups {
-    
+
+    private static final Logger LOGGER
+            = Logger.getLogger(DupPhotoRecordMgr.class.getName());
     ProcessDupsUI ui = null;
-    
+
     ActionListener baseListener = null;
     ActionListener dupListener = null;
     DupPhotoRecordMgr dpm;
-    ProcessPhotoDups () {
-       Logger.getLogger(DupDbHelper.class.getName()).log(Level.FINE,
-                        null, "Consturctor");
-        baseListener = new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+
+    long currentRowNumber = 0;
+    long totalRowCount = 0;
+
+    ProcessPhotoDups() {
+        LOGGER.setLevel(Level.ALL);
+        LOGGER.fine( "Constuctor");
+        baseListener = (ActionEvent evt) -> {
             baseButtonClicked(evt);
-            };
         };
-        dupListener = new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        dupListener = (ActionEvent evt) -> {
             dupButtonClicked(evt);
-            };
         };
-        
+        dpm = new DupPhotoRecordMgr();
+        totalRowCount = dpm.getDupRecordCount();
         ui = new ProcessDupsUI(baseListener, dupListener);
         ui.setVisible(true);
         // instantiate Dup Photo Record Manager
-        dpm = new DupPhotoRecordMgr();
+
         if (!dpm.next()) {
             JOptionPane.showMessageDialog(
-                     null, "Duplicate Table Empty", "No Duplicates", 
-                     JOptionPane.INFORMATION_MESSAGE);
+                    null, "Duplicate Table Empty", "No Duplicates",
+                    JOptionPane.INFORMATION_MESSAGE);
             System.exit(0);
         }
         processDupEntry();
     }
-    
+
     private void processDupEntry() {
-       
-            //int currNum = dpm .getRow();
-            long id = dpm.getId();
+        currentRowNumber += 1;
+        //int currNum = dpm .getRow();
+        long id = dpm.getId();
         System.out.println("Id for first dup record: " + id);
-            String dupFilePath = dpm.getDupFilePath();
-            String baseFilePath = dpm.getBaseFilePath();
-            
-            ui.showDupPhoto(dupFilePath);
-            ui.showBasePhoto(baseFilePath);              
+        String dupFilePath = dpm.getDupFilePath();
+        String baseFilePath = dpm.getBaseFilePath();
+
+        ui.showDupPhoto(dupFilePath);
+        ui.showBasePhoto(baseFilePath);
+
+        String stat = currentRowNumber + " of " + totalRowCount;
+        ui.setStatusLine(stat);
     }
-      
+
     void baseButtonClicked(ActionEvent e) {
-        JButton whichBtn = (JButton)e.getSource();
-        if (!(whichBtn instanceof JButton )) {
+        JButton whichBtn = (JButton) e.getSource();
+        if (!(whichBtn instanceof JButton)) {
             System.out.println("Event not triggered by Button");
             System.exit(10);
         }
         String buttonName = whichBtn.getText();
         ActionButton ab = ActionButton.fromString(buttonName);
-        String message="";
+        String message = "";
         switch (ab) {
             case REPLACE: {
                 message = "Replacing";
@@ -90,122 +101,126 @@ public class ProcessPhotoDups {
             }
         }
         JOptionPane.showMessageDialog(
-                     null, "BASE:" + message, "Title", 
-                     JOptionPane.INFORMATION_MESSAGE);
-    } 
-    
+                null, "BASE:" + message, "Title",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
     void dupButtonClicked(ActionEvent e) {
-        JButton whichBtn = (JButton)e.getSource();
-        if (!(whichBtn instanceof JButton )) {
+        JButton whichBtn = (JButton) e.getSource();
+        if (!(whichBtn instanceof JButton)) {
             System.out.println("Event not triggered by Button");
             System.exit(10);
         }
         String buttonName = whichBtn.getText();
         ActionButton ab = ActionButton.fromString(buttonName);
-        String message="";
+        String message = "";
         switch (ab) {
             case SKIP: {
-                message = "Skipping";
+                dpm.markSkipped();
+                moveToNext();
                 break;
             }
             case DELETE: {
-                message = "Deleting";
+                dpm.markDelete();
+                moveToNext();
                 break;
             }
             case MOVE: {
                 message = "Moving";
+                moveToNext();
                 break;
             }
             case RENAME: {
                 message = "Renaming";
+                moveToNext();
                 break;
             }
         }
-        /*
-        switch (buttonName){
-            case "Skip": {
-                
-            
-                try { 
-                    dbHelper.markDupSkipped();
-                    if (dupsTable.next())
-                        processDup(dupsTable); 
-                    else {
-                            me.dispose(); return;
-                }
-                    //}
-                } catch (SQLException ex) {
-                    System.out.println(ex.getMessage());
-                    System.exit(8);
-                }
-                message = "Skippping dup photo";
-                break;
-           
-            }
-            case "Move": {
-                message = "Moving photo";
-                break;
-            }
-            case "Rename": {
-                message = "Renameing Photo";
-                break;
-            }
-            case "Delete": {
-                
-                int a=JOptionPane.showConfirmDialog(this,"You are about to delete file\n" +  
-                        dupPhotoPanel.displayedPhotoPath.getText() + "\nAre you sure?");  
-                if(a==JOptionPane.YES_OPTION) {
-
-                    message = "Bye bye to photo";
-                    try { 
-                        dbHelper.markToDelete();
-                        if (!dupsTable.next())  {                        
-                                me.dispose(); 
-                                return;}
-                    } catch (SQLException ex) {
-                        System.out.println(ex.getMessage());
-                        System.exit(8);
-                    }
-                processDup(dupsTable); 
-                break;
-            }
-        } 
-        */
-        JOptionPane.showMessageDialog(
-                     null, "DUP: " + message, "Title", 
-                     JOptionPane.INFORMATION_MESSAGE);
-    } 
+        if (message.isEmpty())return;
         
-       
+        JOptionPane.showMessageDialog(
+                null, "DUP: " + message, "Title",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
-    /*
-        dupsTable =dbHelper.getDupDbEntries(10);
-        if (dbHelper.getResultSetSize(dupsTable) == 0) {
+    void moveToNext() {
+        if (dpm.next()) {
+            processDupEntry();
+        } else {
             JOptionPane.showMessageDialog(
-                     null, "Duplicate DB Table Empty", "Title", 
-                     JOptionPane.INFORMATION_MESSAGE);
+                    null, "Last Dup Entry", "Finished",
+                    JOptionPane.INFORMATION_MESSAGE);
+            System.exit(0);
         }
-       try {
-           dupsTable.next();
-       } catch (SQLException ex) {
-           Logger.getLogger(HomePage.class.getName()).log(Level.SEVERE, null, ex);
-       }
-        */
-    
+    }
+
+    /**
+     * Assures that the folder exists by creating it if not found
+     *
+     * @param path folder path to validate or create
+     */
+    // Validates if folder exists or creates it if not
+    private void assureFolderExists(String path) {
+        File testFile = new File(path);
+        if (testFile.exists() && testFile.isDirectory()) {
+            return;
+        }
+        makeFolder(path);
+    }
+
+    //  Make folder whose path is input parameter
+    private void makeFolder(String path) {
+        //Creating a File object
+        File file = new File(path);
+        //Creating the directory
+        boolean result = file.mkdir();
+        if (!result) {
+            System.out.println("Couldn’t create specified directory: " + path);
+            System.exit(5);
+        }
+    }
+
+    private void moveBinFile(File sourceFile, String destFileString) {
+        byte[] buffer = null;
+        try {
+            //create FileInputStream object for source file
+            FileInputStream fin = new FileInputStream(sourceFile);
+            //create FileOutputStream object for destination file
+            FileOutputStream fout = new FileOutputStream(destFileString);
+            if (buffer == null) {
+                buffer = new byte[16000];
+            }
+            // copy file big hunk at at time
+            int noOfBytes = 0;
+
+            //read bytes from source file and write to destination file
+            while ((noOfBytes = fin.read(buffer)) != -1) {
+                fout.write(buffer, 0, noOfBytes);
+            }
+            //close the streams
+            fin.close();
+            fout.close();
+        } //end of try
+        catch (FileNotFoundException fnf) {
+            System.out.println("Specified file not found :" + fnf);
+        } catch (IOException ioe) {
+            System.out.println("Error while copying file :" + ioe);
+        }
+    }
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 Logger.getLogger(DupDbHelper.class.getName()).log(Level.FINE,
                         null, "Main");
                 new ProcessPhotoDups();
-               
+
             }
         });
     }
-    
+
 }
