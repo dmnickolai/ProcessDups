@@ -44,18 +44,18 @@ public class ProcessDupsUI extends JFrame{
     
    
     
-   Container mainContainer = null;
+   private Container mainContainer = null;
    private ProcessDupsUI me = null; 
-   ResultSet dupsTable = null;
-   Icon noPhoto = null;
-   JLabel lblStatus=null;
+   private ResultSet dupsTable = null;
+   private Icon noPhoto = null;
+   private JLabel lblStatus=null;
    
    //DupDbHelper dbHelper = new DupDbHelper();
-   PhotoPanel basePhotoPanel = null;
-   PhotoPanel dupPhotoPanel = null;
+   private PhotoPanel basePhotoPanel = null;
+   private PhotoPanel dupPhotoPanel = null;
    
-   ActionButton[] baseButtons =  {ActionButton.REPLACE, ActionButton.RENAME, ActionButton.MOVE};
-   ActionButton[] dupButtons =  {ActionButton.SKIP, ActionButton.DELETE, ActionButton.RENAME, ActionButton.MOVE};
+   private ActionButton[] baseButtons =  {ActionButton.REPLACE, ActionButton.RENAME, ActionButton.MOVE};
+   private ActionButton[] dupButtons =  {ActionButton.SKIP, ActionButton.DELETE, ActionButton.RENAME, ActionButton.MOVE};
    
    public ProcessDupsUI( ActionListener baseListener, ActionListener dupListener) {
         super("Process Photos with Same Timestamp");
@@ -110,7 +110,7 @@ public class ProcessDupsUI extends JFrame{
         
    }
    
-   void setStatus(String stat){
+   void setStatusLine(String stat){
        lblStatus.setText(stat);
    }
    
