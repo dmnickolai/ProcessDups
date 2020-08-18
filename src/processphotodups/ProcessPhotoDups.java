@@ -26,7 +26,7 @@ public class ProcessPhotoDups {
     private static final Logger LOGGER
             = Logger.getLogger(DupPhotoRecordMgr.class.getName());
     ProcessDupsUI ui = null;
-
+    boolean includedMarked = true;
     ActionListener baseListener = null;
     ActionListener dupListener = null;
     DupPhotoRecordMgr dpm;
@@ -35,20 +35,19 @@ public class ProcessPhotoDups {
     long totalRowCount = 0;
 
     ProcessPhotoDups() {
-        LOGGER.setLevel(Level.ALL);
-        LOGGER.fine( "Constuctor");
+        LOGGER.fine("Constuctor");
         baseListener = (ActionEvent evt) -> {
             baseButtonClicked(evt);
         };
         dupListener = (ActionEvent evt) -> {
             dupButtonClicked(evt);
         };
-        dpm = new DupPhotoRecordMgr();
+        // instantiate Dup Photo Record Manager
+        dpm = new DupPhotoRecordMgr(includedMarked);
         totalRowCount = dpm.getDupRecordCount();
         ui = new ProcessDupsUI(baseListener, dupListener);
         ui.setVisible(true);
-        // instantiate Dup Photo Record Manager
-
+        
         if (!dpm.next()) {
             JOptionPane.showMessageDialog(
                     null, "Duplicate Table Empty", "No Duplicates",
@@ -62,7 +61,7 @@ public class ProcessPhotoDups {
         currentRowNumber += 1;
         //int currNum = dpm .getRow();
         long id = dpm.getId();
-        System.out.println("Id for first dup record: " + id);
+        //System.out.println("Id for first dup record: " + id);
         String dupFilePath = dpm.getDupFilePath();
         String baseFilePath = dpm.getBaseFilePath();
 
@@ -84,7 +83,12 @@ public class ProcessPhotoDups {
         String message = "";
         switch (ab) {
             case REPLACE: {
-                message = "Replacing";
+                // Replace Base photo with Duplicate
+                File source = new File(dpm.getDupFilePath());
+                moveBinFile (source,dpm.getBaseFilePath());
+                deleteFile (source);
+                dpm.deleteFromDupDb();
+                moveToNext();
                 break;
             }
             case DELETE: {
@@ -116,12 +120,14 @@ public class ProcessPhotoDups {
         String message = "";
         switch (ab) {
             case SKIP: {
-                dpm.markSkipped();
+                dpm.deleteFromDupDb();
                 moveToNext();
                 break;
             }
             case DELETE: {
-                dpm.markDelete();
+                File source = new File(dpm.getDupFilePath());
+                deleteFile (source);
+                dpm.deleteFromDupDb();
                 moveToNext();
                 break;
             }
@@ -136,8 +142,10 @@ public class ProcessPhotoDups {
                 break;
             }
         }
-        if (message.isEmpty())return;
-        
+        if (message.isEmpty()) {
+            return;
+        }
+
         JOptionPane.showMessageDialog(
                 null, "DUP: " + message, "Title",
                 JOptionPane.INFORMATION_MESSAGE);
@@ -178,6 +186,12 @@ public class ProcessPhotoDups {
             System.out.println("Couldn’t create specified directory: " + path);
             System.exit(5);
         }
+    }
+    
+    private void deleteFile(File file){
+        
+        if (file.delete()) return;
+        LOGGER.info("Unable to delete file " + file.getPath());
     }
 
     private void moveBinFile(File sourceFile, String destFileString) {
