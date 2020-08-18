@@ -34,18 +34,18 @@ class DupDbHelper {
     static final String dbPassword = "55555";
 
     // table names
-    private String baseTableName = "testBase";
-    private String dupsTableName = baseTableName + "Dups";
-    private String logTableName = baseTableName + "Log";
+    private static final String baseTableName = "testBase";
+    private static final String dupsTableName = baseTableName + "Dups";
+    private static final String logTableName = baseTableName + "Log";
 
     // Constants for SQL commands
-    private String selectAllDupSQL = "SELECT * FROM " + dupsTableName + " LIMIT ?;";
-    private String selectAllDupWhereSQL = "SELECT * FROM " + dupsTableName
-            + " WHERE skipped = ? AND markedfordelete = ?  LIMIT ? ;";
+    private static final String selectDupSQL = "SELECT * FROM " + dupsTableName;
+    private static final String selectWhereSQL = " WHERE skipped = 0 AND markedfordelete = 0";
+    private static final String selectLimitSQL =  " LIMIT ?;";
 
     // Prepared statement objects
-    private PreparedStatement selectAllDups = null;
-    private PreparedStatement selecteAllDupsWhere = null;
+    private PreparedStatement selectDups = null;
+    private PreparedStatement selectDupsWhere = null;
     // Class Variables
 
     private Connection dbConn = null;
@@ -54,52 +54,30 @@ class DupDbHelper {
     // Constructor
     DupDbHelper() {
         Handler handlerObj = new ConsoleHandler();
-        handlerObj.setLevel(Level.ALL);
+        handlerObj.setLevel(Level.WARNING);
         LOGGER.addHandler(handlerObj);
-        LOGGER.setLevel(Level.ALL);
+        LOGGER.setLevel(Level.WARNING);
         LOGGER.setUseParentHandlers(false);
         LOGGER.log(Level.FINE, "In DbHelper Constuctor");
         dbConn = getDbConnection();
         prepareSQLStatements();
     }
 
-    // the following methods perform viarions of SELECT statements
-    int dbSelect(String[] columns) {
-        throw new UnsupportedOperationException("db Select Not supported yet.");
-    }
-
-    ResultSet dbSelectAll(int limit) {
+    ResultSet dbSelect(int limit, boolean includeMarked) {
         try {
-            selectAllDups.setInt(1, limit);
-            resultSet = selectAllDups.executeQuery();
-
+            selectDups.setInt(1, limit);
+            selectDupsWhere.setInt(1, limit);
+            if (includeMarked) {
+                resultSet = selectDups.executeQuery();
+            } else {
+                resultSet = selectDupsWhere.executeQuery();
+            }
         } catch (SQLException ex) {
             LOGGER.severe(ex.getMessage());
             System.exit(21);
         }
         return resultSet;
 
-    }
-
-    ResultSet dbSelectWhere(int limit, boolean skipped, boolean deleted) {
-        try {
-            selecteAllDupsWhere.setInt(3, limit);
-            int getSkipped = 0;
-            if (skipped) {
-                getSkipped = 1;
-            }
-            int getDeleted = 0;
-            if (deleted) {
-                getDeleted = 1;
-            }
-            selecteAllDupsWhere.setInt(1, getSkipped);
-            selecteAllDupsWhere.setInt(2, getDeleted);
-            resultSet = selecteAllDupsWhere.executeQuery();
-        } catch (SQLException ex) {
-            LOGGER.severe(ex.getMessage());
-            System.exit(21);
-        }
-        return resultSet;
     }
 
     long getDupTableCount() {
@@ -119,7 +97,6 @@ class DupDbHelper {
     }
 
     Connection getDbConnection() {
-        LOGGER.log(Level.FINE, "in getDbConnection");
         //if connection exists, return it
         if (dbConn != null) {
             return dbConn;
@@ -129,18 +106,18 @@ class DupDbHelper {
         try {
             Class.forName(dbDriver);
             Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            System.out.println("Connection OK");
+            LOGGER.fine("Connection OK");
             dbConn = conn;
             LOGGER.log(Level.FINE, "DB Conn OK");
             return conn;
         } catch (SQLException ex) {
-            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.severe(ex.getMessage());
             LOGGER.severe("Aborting app.....");
             System.exit(1);
         } catch (Exception ex) {
-            System.out.println(ex.getMessage() + ex.getCause().toString());
-            System.out.println("Aborting app.....");
-            System.exit(1);
+            LOGGER.severe(ex.getMessage());
+            LOGGER.severe("Aborting app.....");
+            System.exit(2);
         }
         return null;
     }
@@ -152,32 +129,55 @@ class DupDbHelper {
             }
         } catch (SQLException ex) {
             // report error then ignore
-            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.severe(ex.getMessage());
+            //System.exit(3);
         } finally {
             dbConn = null;
         }
     }
 
     public void markDupSkipped(long id) {
+        int count = -1;
         try {
-            
-            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName + 
-                    " SET skipped = 1 WHERE id = ?");
+            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName
+                    + " SET skipped = 1 WHERE id = ?");
             update.setLong(1, id);
-            int j = update.getUpdateCount();
-            int count = update.executeUpdate();
+            //int j = update.getUpdateCount();
+            count = update.executeUpdate();
+            if (count != 1) {
+                LOGGER.severe("id=" + id + "was not updated");
+            }
         } catch (SQLException ex) {
             Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
-    public void markToDelete(long id) {
+    
+    public void deleteDupRow(long id){
+        int count = -1;
         try {
-            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName + 
-                    " SET markedfordelete = 1 WHERE id = ?");
+            PreparedStatement deleteStmt = dbConn.prepareStatement("DELETE FROM " + dupsTableName
+                    + " WHERE id = ?;");
+            deleteStmt.setLong(1, id);            
+            count = deleteStmt.executeUpdate();
+            if (count != 1) {
+                LOGGER.severe("id=" + id + "was not deleted");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+  
+    public void markToDelete(long id) {
+        int count = 0;
+        try {
+            PreparedStatement update = dbConn.prepareStatement("UPDATE " + dupsTableName
+                    + " SET markedfordelete = 1 WHERE id = ?");
             update.setLong(1, id);
-            int j = update.getUpdateCount();
-            int count = update.executeUpdate();
+            //int j = update.getUpdateCount();
+            count = update.executeUpdate();
+            if (count != 1) {
+                LOGGER.severe("id=" + id + "was not updated");
+            }
         } catch (SQLException ex) {
             Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -194,10 +194,13 @@ class DupDbHelper {
 
     private void prepareSQLStatements() {
         try {
-            selectAllDups = dbConn.prepareStatement(selectAllDupSQL, ResultSet.TYPE_SCROLL_SENSITIVE,
-                    ResultSet.CONCUR_UPDATABLE);
-            selecteAllDupsWhere = dbConn.prepareStatement(selectAllDupWhereSQL, ResultSet.TYPE_SCROLL_SENSITIVE,
-                    ResultSet.CONCUR_UPDATABLE);
+            selectDups = dbConn.prepareStatement(selectDupSQL + selectLimitSQL, 
+                    ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            LOGGER.log(Level.FINE,selectDups.toString());
+            selectDupsWhere = dbConn.prepareStatement(
+                    selectDupSQL + selectWhereSQL + selectLimitSQL, 
+                    ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+            LOGGER.log(Level.FINE,selectDupsWhere.toString());
         } catch (Exception ex) {
             Logger.getLogger(DupDbHelper.class.getName()).log(Level.SEVERE, null, ex);
             LOGGER.severe("Aborting app.....");
