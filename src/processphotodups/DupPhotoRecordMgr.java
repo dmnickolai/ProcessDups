@@ -51,13 +51,15 @@ public class DupPhotoRecordMgr {
             fileHandlerObj = new FileHandler(logFilePath);
             fileHandlerObj.setFormatter(new SimpleFormatter());
         } catch (IOException ex) {
-            Logger.getLogger(DupPhotoRecordMgr.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.severe(ex.getMessage());
+            System.exit(31);
         } catch (SecurityException ex) {
-            Logger.getLogger(DupPhotoRecordMgr.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.severe(ex.getMessage());
+            System.exit(32);
         }
         fileHandlerObj.setLevel(Level.ALL);
         LOGGER.addHandler(fileHandlerObj);
-        LOGGER.setLevel(Level.ALL);
+        LOGGER.setLevel(Level.WARNING);
         LOGGER.setUseParentHandlers(false);
         
         LOGGER.log(Level.FINE, "In Record Manager Constuctor");
@@ -78,10 +80,6 @@ public class DupPhotoRecordMgr {
             Logger.getLogger(DupPhotoRecordMgr.class.getName()).log(Level.SEVERE, null, ex);
         }
         return b;
-    }
-
-    void getSomeDupRecords(int limit) {
-        throw new UnsupportedOperationException("dbSelect with limit not supported yet.");
     }
 
     long getId() {
